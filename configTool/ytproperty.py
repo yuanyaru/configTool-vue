@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from iceCon import ice_con
 import json
 import Ice
@@ -11,21 +11,27 @@ import YTArea
 
 yt_blu = Blueprint('yt', __name__)
 
+
 # 查找(遥调属性)
-@yt_blu.route('/yt_data', methods=['POST'])
+@yt_blu.route('/getYTdata', methods=['GET'])
 def get_yt_property_send():
-    stationId = request.form.get("stationId")
+    stationId = request.args.get("stationId")
     station = json.loads(stationId)
     DataCommand = ice_con()
     status, result = DataCommand.RPCGetYTProperty(station)
     ytproperty = []
     for i in range(len(result)):
-        ytproperty.append({"id": result[i].ID, "name": result[i].name,
+        ytproperty.append({"ID": result[i].ID, "name": result[i].name,
                            "describe": result[i].describe, "unit": result[i].unit,
                            "kval": result[i].kval, "bval": result[i].bval,
                            "address": result[i].address, "uplimt": result[i].uplimt,
                            "downlimt": result[i].downlimt})
-    return json.dumps(ytproperty)
+    response = {
+        'ytproperty': ytproperty,
+        'lenytp': len(result),
+    }
+    return jsonify(response)
+
 
 # 添加、修改(遥调属性)
 @yt_blu.route('/set_yt', methods=['POST'])
@@ -75,6 +81,7 @@ def set_yt_property():
         ytproperty.append(ytpstruct)
     DataCommand.RPCSetYTProperty(station, ytproperty)
     return '保存成功!'
+
 
 # 删除(遥调属性)
 @yt_blu.route('/delete_yt', methods=['POST'])

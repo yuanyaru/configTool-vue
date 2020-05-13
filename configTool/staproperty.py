@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from iceCon import ice_con
 import json
 import Ice
@@ -17,8 +17,9 @@ def get_station_property():
     status, result = DataCommand.RPCGetStationProperty()
     return result
 
+
 # 查找(厂站属性)
-@sta_blu.route('/station_data', methods=['GET'])
+@sta_blu.route('/getLianludata', methods=['GET'])
 def get_station_property_send():
     result = get_station_property()
     staproperty = []
@@ -27,7 +28,11 @@ def get_station_property_send():
                             "describe": result[i].describe, "ruleID": result[i].ruleID,
                             "address": result[i].address, "PORT": result[i].PORT,
                             "role": result[i].role})
-    return json.dumps(staproperty)
+    response = {
+        'staproperty': staproperty,
+    }
+    return jsonify(response)
+
 
 # 添加、修改(厂站属性)
 @sta_blu.route('/set_station', methods=['POST'])
@@ -71,6 +76,7 @@ def set_station_property():
     # stap.append(spstruct)
     DataCommand.RPCSetStationProperty(stap)
     return '保存成功!'
+
 
 # 删除(厂站属性)
 @sta_blu.route('/delete_station', methods=['POST'])

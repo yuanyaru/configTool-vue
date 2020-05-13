@@ -6,19 +6,37 @@
 
     <el-container>
         <el-aside>
-            <el-tree :data="treeData" :props="defaultProps">
+            <el-tree :data="treeData" @node-click="handleNodeClick" :props="defaultProps"
+                     style="background-color: #F5F7FA;font-size: 9px;min-width: 150px;max-width: 220px;padding: 0px;margin: 0px"
+                     highlight-current>
             </el-tree>
         </el-aside>
     
         <el-main>
-            <el-table :data="tableData">
-                <el-table-column prop="date" label="日期" width="140">
-                </el-table-column>
-                <el-table-column prop="name" label="姓名" width="120">
-                </el-table-column>
-                <el-table-column prop="address" label="地址">
+            <el-table :data="viewtableData" ref="singleTable" 
+                      highlight-current-row
+                      :header-cell-style="headercellstyle"
+                      :cell-style="cesty"
+                      border>
+                <el-table-column :label="item.label" 
+                                 :prop="item.value" v-for="(item, key) in viewcolumns"
+                                 :min-width="item.minwidth"
+                                 :show-overflow-tooltip=true
+                                 :resizable=true
+                                 :key="key">
                 </el-table-column>
             </el-table>
+            <!-- 分页 -->
+            <div class="block" style="float: right;margin-top: 1px;margin-bottom: 1px;padding-right: 15px">
+                <span class="demonstration"></span>
+                <el-pagination
+                    @current-change="handleCurrentChange"
+                    :current-page="currentpage"
+                    :page-size="pagesize"
+                    layout="total, prev, pager, next, jumper"
+                    :total="totalcount">
+                </el-pagination>
+            </div>
         </el-main>
     </el-container>
 
@@ -57,6 +75,10 @@
         text-align: center; 
         line-height: 60px;
     }
+
+    .current-row > td {
+        background: #218af3 !important;
+    }
 </style>
 
 <script>
@@ -64,22 +86,293 @@
 
     export default {
         data() {
-            const table_item = {
-                date: '2016-05-02',
-                name: '王小虎',
-                address: '上海市普陀区金沙江路 1518 弄'
-            };
             return {
                 treeData: [],
                 defaultProps: {
                     children: 'children',
                     label: 'label'
                 },
-                tableData: Array(10).fill(table_item),
+                viewcolumns: [],  //显示的列
+                viewtableData: [], //根据列显示的数据
+                lianludata: [],
+                ycdata: [],
+                yxdata: [],
+                ykdata: [],
+                ytdata: [],
+                soedata: [],
+                station_ID: '', 
+                pagesize: 50,  //一页显示多少个
+                totalcount: 0, //总共有多少条数据
+                currentpage: 1,
+                Linkheader: [
+                    {
+                        label: "点号",
+                        value:'ID',
+                        minwidth: '30'
+                    }, {
+                        label: "名称",
+                        value:'name',
+                        minwidth: '140'
+                    },
+                    {
+                        label: "描述",
+                        value:'describe',
+                        minwidth: '80'
+                    },
+                    {
+                        label: "ruleID",
+                        value:'ruleID',
+                        minwidth: '40'
+                    },
+                    {
+                        label: "地址",
+                        value:'address',
+                        minwidth: '80'
+                    },
+                    {
+                        label: "端口",
+                        value:'PORT',
+                        minwidth: '40'
+                    },
+                    {
+                        label: "ROLE",
+                        value:'role',
+                        minwidth: '40'
+                    },
+                ],
+                YCheader: [
+                    {
+                        label: "点号",
+                        value:'ID',
+                        minwidth: '30'
+                    }, {
+                        label: "名称",
+                        value:'name',
+                        minwidth: '120',
+                    },
+                    {
+                        label: "描述",
+                        value:'describe',
+                        minwidth: '80'
+                    },
+                    {
+                        label: "单位",
+                        value:'unit',
+                        minwidth: '40'
+                    },
+                    {
+                        label: "K值",
+                        value:'kval',
+                        minwidth: '40'
+                    },
+                    {
+                        label: "B值",
+                        value:'bval',
+                        minwidth: '40'
+                    },
+                    {
+                        label: "地址",
+                        value:'address',
+                        minwidth: '70'
+                    },
+                    {
+                        label: "上限",
+                        value:'uplimt',
+                        minwidth: '40'
+                    },
+                    {
+                        label: "下限",
+                        value:'downlimt',
+                        minwidth: '40'
+                    },
+                ],
+                YXheader: [
+                    {
+                        label: "点号",
+                        value: 'ID',
+                        minwidth: '30'
+                    }, {
+                        label: "名称",
+                        value: 'name',
+                        minwidth: '140'
+                    },
+                    {
+                        label: "描述",
+                        value: 'describe',
+                        minwidth: '80'
+                    },
+                    {
+                        label: "ASDU",
+                        value: 'ASDU',
+                        minwidth: '80'
+                    },
+                    {
+                        label: "字节位",
+                        value:'wordPos',
+                        minwidth: '40'
+                    },
+                    {
+                        label: "bit位",
+                        value: 'bitPos',
+                        minwidth: '40'
+                    },
+                    {
+                        label: "所占位",
+                        value: 'bitLength',
+                        minwidth: '50'
+                    },
+                    {
+                        label: "LinkPoint1",
+                        value:'LinkPoint1',
+                        minwidth: '80'
+                    },
+                    {
+                        label: "LinkPoint2",
+                        value: 'LinkPoint2',
+                        minwidth: '80'
+                    },
+                    {
+                        label: "OneToZero",
+                        value: 'OneToZero',
+                        minwidth: '80'
+                    },
+                    {
+                        label: "ZeroToOne",
+                        value:'ZeroToOne',
+                        minwidth: '80'
+                    },
+                    {
+                        label: "address",
+                        value:'address',
+                        minwidth: '80'
+                    },
+                ],
+                YKheader: [
+                    {
+                        label: "点号",
+                        value: 'ID',
+                        minwidth: '30'
+                    }, {
+                        label: "名称",
+                        value: 'name',
+                        minwidth: '120'
+                    },
+                    {
+                        label: "描述",
+                        value: 'describe',
+                        minwidth: '80'
+                    },
+                    {
+                        label: "ASDU",
+                        value: 'ASDU',
+                        minwidth: '80'
+                    },
+                    {
+                        label: "字节位",
+                        value: 'wordPos',
+                        minwidth: '40'
+                    },
+                    {
+                        label: "bit位",
+                        value: 'bitPos',
+                        minwidth: '40'
+                    },
+                    {
+                        label: "所占位数",
+                        value: 'bitLength',
+                        minwidth: '40'
+                    },
+                    {
+                        label: "EnablePoint",
+                        value: 'EnablePoint',
+                        minwidth: '40'
+                    },
+                    {
+                        label: "EnableValue",
+                        value: 'EnableValue',
+                        minwidth: '80'
+                    },
+                    {
+                        label: "地址",
+                        value: 'address',
+                        minwidth: '80'
+                    },
+                ],
+                YTheader: [
+                    {
+                        label: "点号",
+                        value: 'ID',
+                        minwidth: '30'
+                    }, {
+                        label: "名称",
+                        value: 'name',
+                        minwidth: '140'
+                    },
+                    {
+                        label: "描述",
+                        value: 'describe',
+                        minwidth: '80'
+                    },
+                    {
+                        label: "单位",
+                        value: 'unit',
+                        minwidth: '40'
+                    },
+                    {
+                        label: "K值",
+                        value: 'kval',
+                        minwidth: '40'
+                    },
+                    {
+                        label: "B值",
+                        value: 'bval',
+                        minwidth: '40'
+                    },
+                    {
+                        label: "地址",
+                        value: 'address',
+                        minwidth: '80'
+                    },
+                    {
+                        label: "上限",
+                        value: 'uplimt',
+                        minwidth: '40'
+                    },
+                    {
+                        label: "下限",
+                        value: 'downlimt',
+                        minwidth: '40'
+                    },
+
+                ],
+                SOEheader: [
+                   {
+                        label: "点号",
+                        value: 'ID',
+                        minwidth: '30'
+                    }, {
+                        label: "名称",
+                        value: 'name',
+                        minwidth: '140'
+                    },
+                    {
+                        label: "描述",
+                        value: 'describe',
+                        minwidth: '80'
+                    }, 
+                    {
+                        label: "level",
+                        value: 'level',
+                        minwidth: '80'
+                    },
+                ],
             };
         },
         mounted() {
-		    this.getTreeData();
+            // document.oncontextmenu = function (e) { return false; }
+            this.getTreeData();
+            // this.getTableHeader();
+            this.getLianludata();
 		},
 		methods: {
 		    async getTreeData() {
@@ -99,20 +392,177 @@
                             label: staNames[i],
                             children: [{
                                 label: '遥信',
+                                id: i+1,
                             }, {
-                                label: '遥测',  
+                                label: '遥测', 
+                                id: i+1,
                             }, {
                                 label: '遥控',
+                                id: i+1,
                             }, {
                                 label: '遥调',
+                                id: i+1,
                             }, {
                                 label: 'SOE',
+                                id: i+1,
                             }]
                         };
                         treeitem.children.push(tree_item);
                     }
                     that.treeData.push(treeitem);
-		        });
+                });
+            },
+
+            async getTableHeader() {
+                const path = 'http://127.0.0.1:5000/getTableHeader';
+
+                await axios.get(path).then(function (response) {
+                    var tableHeader = response.data.tableHeader;
+                    // console.log(tableHeader);
+                });
+            },
+
+            //点击树触发事件
+            handleNodeClick: function (data) {
+                let that = this;
+                // 每次点击，清除数据
+                if(data.label=="厂站列表") {
+                    that.viewcolumns=that.Linkheader;
+                    that.viewtableData=that.lianludata;
+                }
+                if(data.label=="遥测") {
+                    var station_ID = data.id;
+                    that.station_ID = station_ID;
+                    that.viewcolumns=that.YCheader;
+                    that.getYCdata();
+                }
+                if(data.label=="遥信") {
+                    var station_ID = data.id;
+                    that.station_ID = station_ID;
+                    that.viewcolumns=that.YXheader;
+                    that.getYXdata();
+                }
+                if(data.label=="遥控") {
+                    var station_ID = data.id;
+                    that.station_ID = station_ID;
+                    that.viewcolumns=that.YKheader;
+                    that.getYKdata();
+                }
+                if(data.label=="遥调") {
+                    var station_ID = data.id;
+                    that.station_ID = station_ID;
+                    that.viewcolumns=that.YTheader;
+                    that.getYTdata();
+                }
+                if(data.label=="SOE") {
+                    var station_ID = data.id;
+                    that.station_ID = station_ID;
+                    that.viewcolumns=that.SOEheader;
+                    that.getSOEdata();
+                }
+            },
+
+            async getSOEdata() {
+                let that = this;
+                const path = 'http://127.0.0.1:5000/getSOEdata';
+                var station_ID = that.station_ID;
+                var params = {
+                    stationId: station_ID,
+                };
+
+                await axios.get(path, {params: params}).then(function (response) {
+                    var soedata = response.data.soeproperty;
+                    var count = response.data.lensoep;
+                    that.totalcount = count;
+                    that.soedata = soedata;
+                    that.viewtableData=that.soedata;
+                });
+            },
+
+            async getYTdata() {
+                let that = this;
+                const path = 'http://127.0.0.1:5000/getYTdata';
+                var station_ID = that.station_ID;
+                var params = {
+                    stationId: station_ID,
+                };
+
+                await axios.get(path, {params: params}).then(function (response) {
+                    var ytdata = response.data.ytproperty;
+                    var count = response.data.lenytp;
+                    that.totalcount = count;
+                    that.ytdata = ytdata;
+                    that.viewtableData=that.ytdata;
+                });
+            },
+
+            async getYKdata() {
+                let that = this;
+                const path = 'http://127.0.0.1:5000/getYKdata';
+                var station_ID = that.station_ID;
+                var params = {
+                    stationId: station_ID,
+                };
+
+                await axios.get(path, {params: params}).then(function (response) {
+                    var ykdata = response.data.ykproperty;
+                    var count = response.data.lenykp;
+                    that.totalcount = count;
+                    that.ykdata = ykdata;
+                    that.viewtableData=that.ykdata;
+                });
+            },
+
+            async getYXdata() {
+                let that = this;
+                const path = 'http://127.0.0.1:5000/getYXdata';
+                var station_ID = that.station_ID;
+                var params = {
+                    stationId: station_ID,
+                };
+
+                await axios.get(path, {params: params}).then(function (response) {
+                    var yxdata = response.data.yxproperty;
+                    var count = response.data.lenyxp;
+                    that.totalcount = count;
+                    that.yxdata = yxdata;
+                    that.viewtableData=that.yxdata;
+                });
+            },
+
+            async getYCdata() {
+                let that = this;
+                const path = 'http://127.0.0.1:5000/getYCdata';
+                var station_ID = that.station_ID;
+                var params = {
+                    stationId: station_ID,
+                };
+
+                await axios.get(path, {params: params}).then(function (response) {
+                    var ycdata = response.data.ycproperty;
+                    var count = response.data.lenycp;
+                    that.totalcount = count;
+                    that.ycdata = ycdata;
+                    that.viewtableData=that.ycdata;
+                });
+            },
+
+            async getLianludata() {
+                let that = this;
+                const path = 'http://127.0.0.1:5000/getLianludata';
+
+                await axios.get(path).then(function (response) {
+                    var lianludata = response.data.staproperty;
+                    that.lianludata = lianludata;
+                });
+            },
+
+            headercellstyle({row, column, rowIndex, columnIndex}) {
+                return "background:#E4E7EB;font-weight: bold;color: #101010;pading:0;height:15px;";
+            },
+
+            cesty({row, column, rowIndex, columnIndex}) {
+                return "padding:0;";
             },
         },
     };

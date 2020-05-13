@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from iceCon import ice_con
 import json
 import Ice
@@ -11,10 +11,11 @@ import YXArea
 
 yx_blu = Blueprint('yx', __name__)
 
+
 # 查找(遥信属性)
-@yx_blu.route('/yx_data', methods=['POST'])
+@yx_blu.route('/getYXdata', methods=['GET'])
 def get_yx_property_send():
-    stationId = request.form.get("stationId")
+    stationId = request.args.get("stationId")
     station = json.loads(stationId)
     DataCommand = ice_con()
     status, result = DataCommand.RPCGetYXProperty(station)
@@ -26,7 +27,12 @@ def get_yx_property_send():
                            "bitLength": result[i].bitLength, "LinkPoint1": result[i].LinkPoint1,
                            "LinkPoint2": result[i].LinkPoint2, "OneToZero": result[i].OneToZero,
                            "ZeroToOne": result[i].ZeroToOne, "address": result[i].address})
-    return json.dumps(yxproperty)
+    response = {
+        'yxproperty': yxproperty,
+        'lenyxp': len(result),
+    }
+    return jsonify(response)
+
 
 # 添加、修改(遥信属性)
 @yx_blu.route('/set_yx', methods=['POST'])
@@ -220,6 +226,7 @@ def set_yx_property():
     DataCommand.RPCSetYXProperty(station, yxproperty)
     return '保存成功!'
 """
+
 
 # 删除(遥信属性)
 @yx_blu.route('/delete_yx', methods=['POST'])

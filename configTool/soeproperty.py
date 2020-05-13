@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from iceCon import ice_con
 import json
 import Ice
@@ -11,10 +11,11 @@ import SOEArea
 
 soe_blu = Blueprint('soe', __name__)
 
+
 # 查找(SOE属性)
-@soe_blu.route('/soe_data', methods=['POST'])
+@soe_blu.route('/getSOEdata', methods=['GET'])
 def get_soe_property_send():
-    stationId = request.form.get("stationId")
+    stationId = request.args.get("stationId")
     station = json.loads(stationId)
     DataCommand = ice_con()
     status, result = DataCommand.RPCGetSOEProperty(station)
@@ -22,7 +23,12 @@ def get_soe_property_send():
     for i in range(len(result)):
         soeproperty.append({"ID": result[i].ID, "name": result[i].name,
                            "describe": result[i].describe, "level": result[i].level})
-    return json.dumps(soeproperty)
+    response = {
+        'soeproperty': soeproperty,
+        'lensoep': len(result),
+    }
+    return jsonify(response)
+
 
 # 添加、修改(SOE属性)
 @soe_blu.route('/set_soe', methods=['POST'])
@@ -54,6 +60,7 @@ def set_soe_property():
         soeproperty.append(soepstruct)
     DataCommand.RPCSetSOEProperty(station, soeproperty)
     return '保存成功!'
+
 
 # 删除(SOE属性)
 @soe_blu.route('/delete_soe', methods=['POST'])

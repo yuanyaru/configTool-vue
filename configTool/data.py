@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-from flask import Flask, render_template, jsonify
+from flask import Flask, jsonify
 from flask_cors import CORS  # 解决跨域问题
 from iceCon import ice_con
 import sys
@@ -20,6 +20,13 @@ sys.setdefaultencoding('utf-8')
 
 app = Flask(__name__)
 cors = CORS(app, resources={r"/getStaTree": {"origins": "*"}})
+cors = CORS(app, resources={r"/getTableHeader": {"origins": "*"}})
+cors = CORS(app, resources={r"/getLianludata": {"origins": "*"}})
+cors = CORS(app, resources={r"/getYCdata": {"origins": "*"}})
+cors = CORS(app, resources={r"/getYXdata": {"origins": "*"}})
+cors = CORS(app, resources={r"/getYKdata": {"origins": "*"}})
+cors = CORS(app, resources={r"/getYTdata": {"origins": "*"}})
+cors = CORS(app, resources={r"/getSOEdata": {"origins": "*"}})
 
 app.config['SECRET_KEY'] = 'secret!'
 app.register_blueprint(sta_blu)
@@ -38,14 +45,16 @@ def get_property_table():
     return table
 
 
-@app.route('/')
-def index():
-    table = get_property_table()
-    result = get_station_property()
-    return render_template('data.html', tValue=table, staValue=result, staLen=len(result))
+@app.route('/getTableHeader', methods=['GET'])
+def getTableHeader():
+    tableHeader = get_property_table()
+    response = {
+        'tableHeader': tableHeader,
+    }
+    return jsonify(response)
 
 
-@app.route('/getStaTree', methods=['GET', 'POST'])
+@app.route('/getStaTree', methods=['GET'])
 def getStaTree():
     station = get_station_property()
     staLen = len(station)
@@ -54,7 +63,7 @@ def getStaTree():
         staNames.append(station[i].name)
     response = {
         'staLen': staLen,
-        'staNames': staNames
+        'staNames': staNames,
     }
     return jsonify(response)
 
