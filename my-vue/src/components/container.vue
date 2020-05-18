@@ -6,8 +6,9 @@
 
     <el-container>
         <el-aside>
-            <el-tree :data="treeData" @node-click="handleNodeClick" :props="defaultProps"
-                     style="background-color: #F5F7FA;font-size: 9px;min-width: 150px;max-width: 220px;padding: 0px;margin: 0px"
+            <el-tree :data="treeData" @node-click="handleNodeClick" 
+                     :props="defaultProps"
+                     style="background-color: #F5F7FA;max-width: 300px;"
                      highlight-current>
             </el-tree>
         </el-aside>
@@ -30,10 +31,12 @@
             <div class="block" style="float: right;margin-top: 1px;margin-bottom: 1px;padding-right: 15px">
                 <span class="demonstration"></span>
                 <el-pagination
+                    @size-change="handleSizeChange"
                     @current-change="handleCurrentChange"
                     :current-page="currentpage"
+                    :page-sizes="[10, 30, 50, 100]"
                     :page-size="pagesize"
-                    layout="total, prev, pager, next, jumper"
+                    layout="total, sizes, prev, pager, next, jumper"
                     :total="totalcount">
                 </el-pagination>
             </div>
@@ -94,6 +97,7 @@
                 },
                 viewcolumns: [],  //显示的列
                 viewtableData: [], //根据列显示的数据
+                tabledata: [],
                 lianludata: [],
                 ycdata: [],
                 yxdata: [],
@@ -101,7 +105,7 @@
                 ytdata: [],
                 soedata: [],
                 station_ID: '', 
-                pagesize: 50,  //一页显示多少个
+                pagesize: 10,  //一页显示多少个
                 totalcount: 0, //总共有多少条数据
                 currentpage: 1,
                 Linkheader: [
@@ -372,8 +376,17 @@
             // document.oncontextmenu = function (e) { return false; }
             this.getTreeData();
             // this.getTableHeader();
-            this.getLianludata();
-		},
+        },
+        watch: {
+            // 默认点击Tree第一个节点
+            treeData(val) {
+                if (val) {
+                    this.$nextTick(() => {
+                        document.querySelector('.el-tree-node__content').click();
+                    })
+                }
+            },
+        },
 		methods: {
 		    async getTreeData() {
                 // 对应Python提供的接口
@@ -425,10 +438,9 @@
             //点击树触发事件
             handleNodeClick: function (data) {
                 let that = this;
-                // 每次点击，清除数据
                 if(data.label=="厂站列表") {
                     that.viewcolumns=that.Linkheader;
-                    that.viewtableData=that.lianludata;
+                    that.getLianludata();
                 }
                 if(data.label=="遥测") {
                     var station_ID = data.id;
@@ -475,7 +487,8 @@
                     var count = response.data.lensoep;
                     that.totalcount = count;
                     that.soedata = soedata;
-                    that.viewtableData=that.soedata;
+                    that.tabledata = that.soedata;
+                    that.viewTableData(soedata);
                 });
             },
 
@@ -492,7 +505,8 @@
                     var count = response.data.lenytp;
                     that.totalcount = count;
                     that.ytdata = ytdata;
-                    that.viewtableData=that.ytdata;
+                    that.tabledata = that.ytdata;
+                    that.viewTableData(ytdata);
                 });
             },
 
@@ -509,7 +523,8 @@
                     var count = response.data.lenykp;
                     that.totalcount = count;
                     that.ykdata = ykdata;
-                    that.viewtableData=that.ykdata;
+                    that.tabledata = that.ykdata;
+                    that.viewTableData(ykdata);
                 });
             },
 
@@ -526,7 +541,8 @@
                     var count = response.data.lenyxp;
                     that.totalcount = count;
                     that.yxdata = yxdata;
-                    that.viewtableData=that.yxdata;
+                    that.tabledata = that.yxdata;
+                    that.viewTableData(yxdata);
                 });
             },
 
@@ -543,7 +559,8 @@
                     var count = response.data.lenycp;
                     that.totalcount = count;
                     that.ycdata = ycdata;
-                    that.viewtableData=that.ycdata;
+                    that.tabledata = that.ycdata;
+                    that.viewTableData(ycdata);
                 });
             },
 
@@ -553,8 +570,31 @@
 
                 await axios.get(path).then(function (response) {
                     var lianludata = response.data.staproperty;
+                    var count = response.data.lenstap;
                     that.lianludata = lianludata;
+                    that.totalcount = count;
+                    that.tabledata = that.lianludata;
+                    that.viewTableData(lianludata);
                 });
+            },
+
+            //显示的table数据
+            viewTableData(data) {
+                let that = this;
+                //显示分页数据
+                var currentpage= that.currentpage;
+                var begin = (currentpage-1) * that.pagesize;
+                var end = (currentpage-1) * that.pagesize + that.pagesize;
+                let tableData = data;
+                let viewtableData = [];
+                if (tableData.length < end) {
+                    end = tableData.length;
+                }
+                for (var index=begin; index<end; index++) {
+                    var newitem = tableData[index];
+                    viewtableData.push(newitem);
+                }
+                that.viewtableData = viewtableData;
             },
 
             headercellstyle({row, column, rowIndex, columnIndex}) {
@@ -563,6 +603,20 @@
 
             cesty({row, column, rowIndex, columnIndex}) {
                 return "padding:0;";
+            },
+
+            handleSizeChange(val) {
+                console.log(`每页 ${val} 条`);
+                this.pagesize = val;
+                var data = this.tabledata;
+                this.viewTableData(data);
+            },
+
+            handleCurrentChange(val) {
+                console.log(`当前页: ${val}`);
+                this.currentpage = val;
+                var data = this.tabledata;
+                this.viewTableData(data);
             },
         },
     };

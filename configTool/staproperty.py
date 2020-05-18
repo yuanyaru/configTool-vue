@@ -30,6 +30,7 @@ def get_station_property_send():
                             "role": result[i].role})
     response = {
         'staproperty': staproperty,
+        'lenstap': len(result),
     }
     return jsonify(response)
 
