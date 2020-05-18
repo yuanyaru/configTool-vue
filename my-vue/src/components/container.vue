@@ -82,6 +82,10 @@
     .current-row > td {
         background: #218af3 !important;
     }
+
+    .el-tree-node:focus > .el-tree-node__content {
+        background-color: #218af3 !important;
+    }
 </style>
 
 <script>
