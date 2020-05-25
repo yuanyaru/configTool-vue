@@ -14,10 +14,16 @@
         </el-aside>
     
         <el-main>
+            <el-button type="primary" round>加载本地excel</el-button>
+            <el-button type="primary" icon="el-icon-edit" circle></el-button>
+            <el-button type="primary" icon="el-icon-delete" circle></el-button>
+            <el-button type="primary" round>导出</el-button>
+            
             <el-table :data="viewtableData" ref="singleTable" 
                       highlight-current-row
                       :header-cell-style="headercellstyle"
                       :cell-style="cesty"
+                      @cell-click="cellClick"
                       border>
                 <el-table-column :label="item.label" 
                                  :prop="item.value" v-for="(item, key) in viewcolumns"
@@ -578,11 +584,12 @@
                     that.lianludata = lianludata;
                     that.totalcount = count;
                     that.tabledata = that.lianludata;
+                    console.log(lianludata);
                     that.viewTableData(lianludata);
                 });
             },
 
-            //显示的table数据
+            //分页显示table数据
             viewTableData(data) {
                 let that = this;
                 //显示分页数据
