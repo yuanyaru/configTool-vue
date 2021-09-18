@@ -50,7 +50,7 @@
     </el-container>
 
     <el-footer>
-        <span>@2020  西安端怡科技有限公司</span>
+        <span>@2021  西安端怡科技有限公司</span>
     </el-footer>
 </el-container>
 </template>
