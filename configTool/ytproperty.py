@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 from flask import Blueprint, request, jsonify
+from flask_cors import cross_origin
 from iceCon import ice_con
 import json
 import Ice
@@ -34,27 +35,25 @@ def get_yt_property_send():
 
 
 # 添加、修改(遥调属性)
-@yt_blu.route('/set_yt', methods=['POST'])
+@yt_blu.route('/setYt', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def set_yt_property():
     DataCommand = ice_con()
-    stationId = request.form.get("stationId")
-    station = json.loads(stationId)
-    newyt = request.form.get("data")
-    YtProperty = json.loads(newyt)
-    ytp = []
-    for i in range(len(YtProperty)):
-        ytp.append(json.loads(YtProperty[i]))
+    data = request.get_json()
+    stationId = data["station"]
+    YtProperty = data["selectRecords"]
     ytproperty = []
-    for j in range(len(ytp[1])):
-        ID = ytp[0][j]
-        name = ytp[1][j]
-        describe = ytp[2][j]
-        unit = ytp[3][j]
-        kval = ytp[4][j]
-        bval = ytp[5][j]
-        address = ytp[6][j]
-        uplimt = ytp[7][j]
-        downlimt = ytp[8][j]
+    for i in range(len(YtProperty)):
+        ID = YtProperty[i]["ID"]
+        name = YtProperty[i]["name"]
+        describe = YtProperty[i]["describe"]
+        unit = YtProperty[i]["unit"]
+        kval = YtProperty[i]["kval"]
+        bval = YtProperty[i]["bval"]
+        address = YtProperty[i]["address"]
+        uplimt = YtProperty[i]["uplimt"]
+        downlimt = YtProperty[i]["downlimt"]
+
         if ID == "":
             ID = 1000
         if name == "":
@@ -79,20 +78,26 @@ def set_yt_property():
                                         address.encode("utf-8"), float(uplimt),
                                         float(downlimt))
         ytproperty.append(ytpstruct)
-    DataCommand.RPCSetYTProperty(station, ytproperty)
-    return '保存成功!'
+    status = DataCommand.RPCSetYTProperty(stationId, ytproperty)
+    response = {
+        'status': status
+    }
+    return jsonify(response)
 
 
 # 删除(遥调属性)
-@yt_blu.route('/delete_yt', methods=['POST'])
+@yt_blu.route('/deleteYt', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def delete_yt_data():
     DataCommand = ice_con()
-    stationId = request.form.get("stationId")
-    station = json.loads(stationId)
-    ytIDs = request.form.get("ids")
-    yt_IDs = json.loads(ytIDs)
+    IDs = request.get_json()
+    stationId = IDs["station"]
+    ytIDs = IDs["ids"]
     pIDs = []
-    for i in range(len(yt_IDs)):
-        pIDs.append(long(yt_IDs[i]))
-    DataCommand.RPCDelYTProperty(station, pIDs)
-    return '删除成功!'
+    for i in range(len(ytIDs)):
+        pIDs.append(long(ytIDs[i]))
+    status = DataCommand.RPCDelYTProperty(stationId, pIDs)
+    response = {
+        'status': status
+    }
+    return jsonify(response)

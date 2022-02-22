@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from flask_cors import CORS  # 解决跨域问题
 from iceCon import ice_con
 import sys
@@ -18,7 +18,18 @@ from soeproperty import soe_blu
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="./dist",
+            static_folder="./dist",
+            static_url_path=""
+            )
+app.config['SECRET_KEY'] = 'secret!'
+app.register_blueprint(sta_blu)
+app.register_blueprint(yx_blu)
+app.register_blueprint(yc_blu)
+app.register_blueprint(yk_blu)
+app.register_blueprint(yt_blu)
+app.register_blueprint(soe_blu)
+
 cors = CORS(app, resources={r"/getStaTree": {"origins": "*"}})
 cors = CORS(app, resources={r"/getTableHeader": {"origins": "*"}})
 cors = CORS(app, resources={r"/getLianludata": {"origins": "*"}})
@@ -27,14 +38,6 @@ cors = CORS(app, resources={r"/getYXdata": {"origins": "*"}})
 cors = CORS(app, resources={r"/getYKdata": {"origins": "*"}})
 cors = CORS(app, resources={r"/getYTdata": {"origins": "*"}})
 cors = CORS(app, resources={r"/getSOEdata": {"origins": "*"}})
-
-app.config['SECRET_KEY'] = 'secret!'
-app.register_blueprint(sta_blu)
-app.register_blueprint(yx_blu)
-app.register_blueprint(yc_blu)
-app.register_blueprint(yk_blu)
-app.register_blueprint(yt_blu)
-app.register_blueprint(soe_blu)
 
 
 def get_property_table():
@@ -66,6 +69,11 @@ def getStaTree():
         'staNames': staNames,
     }
     return jsonify(response)
+
+
+@app.route('/')
+def index():
+    return render_template("index.html")
 
 
 if __name__ == '__main__':

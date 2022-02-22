@@ -2,8 +2,8 @@
 # -*- coding:utf-8 -*-
 
 from flask import Blueprint, request, jsonify
+from flask_cors import cross_origin
 from iceCon import ice_con
-import json
 import Ice
 Ice.loadSlice("./ice-sqlite.ice")
 # Ice.loadSlice("/code/tool/configTool/ice-sqlite.ice")
@@ -36,23 +36,22 @@ def get_station_property_send():
 
 
 # 添加、修改(厂站属性)
-@sta_blu.route('/set_station', methods=['POST'])
+@sta_blu.route('/setStation', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def set_station_property():
     DataCommand = ice_con()
-    new_station = request.form.get("data")
-    StationProperty = json.loads(new_station)
-    stationp = []
-    for i in range(len(StationProperty)):
-        stationp.append(json.loads(StationProperty[i]))
-    stap = []
-    for j in range(len(stationp[6])):
-        ID = stationp[0][j]
-        name = stationp[1][j]
-        describe = stationp[2][j]
-        ruleID = stationp[3][j]
-        address = stationp[4][j]
-        PORT = stationp[5][j]
-        role = stationp[6][j]
+    data = request.get_json()
+    station = data["selectRecords"]
+    stationProperty = []
+    for i in range(len(station)):
+        ID = station[i]["ID"]
+        name = station[i]["name"]
+        describe = station[i]["describe"]
+        ruleID = station[i]["ruleID"]
+        address = station[i]["address"]
+        PORT = station[i]["PORT"]
+        role = station[i]["role"]
+
         if ID == "":
             ID = 100
         if name == "":
@@ -67,26 +66,28 @@ def set_station_property():
             PORT = 60000
         if role == "":
             role = 1
-        spstruct = StationArea.DxPropertyStation(int(ID), name.encode("utf-8"),
-                                                 describe.encode("utf-8"), int(ruleID),
-                                                 address.encode("utf-8"), int(PORT),
-                                                 int(role))
-        stap.append(spstruct)
-    # spstruct = StationArea.DxPropertyStation(99, "station", "station111", 19,
-    #                                          "192.168.100.124", 29, 39)
-    # stap.append(spstruct)
-    DataCommand.RPCSetStationProperty(stap)
-    return '保存成功!'
+        stationInfo = StationArea.DxPropertyStation(int(ID), name.encode("utf-8"), describe.encode("utf-8"),
+                                                    int(ruleID), address.encode("utf-8"), int(PORT), int(role))
+        stationProperty.append(stationInfo)
+    status = DataCommand.RPCSetStationProperty(stationProperty)
+    # print status
+    response = {
+        'status': status
+    }
+    return jsonify(response)
 
 
 # 删除(厂站属性)
-@sta_blu.route('/delete_station', methods=['POST'])
+@sta_blu.route('/deleteStation', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def delete_station_data():
     DataCommand = ice_con()
-    stationIDs = request.form.get("ids")
-    stations = json.loads(stationIDs)
-    sta = []
-    for i in range(len(stations)):
-        sta.append(long(stations[i]))
-    DataCommand.RPCDelStationProperty(sta)
-    return '删除成功!'
+    stationIDs = request.get_json()
+    staIDs = []
+    for i in range(len(stationIDs["ids"])):
+        staIDs.append(long(stationIDs["ids"][i]))
+    status = DataCommand.RPCDelStationProperty(staIDs)
+    response = {
+        'status': status
+    }
+    return jsonify(response)

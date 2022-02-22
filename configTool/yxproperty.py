@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 from flask import Blueprint, request, jsonify
+from flask_cors import cross_origin
 from iceCon import ice_con
 import json
 import Ice
@@ -35,34 +36,32 @@ def get_yx_property_send():
 
 
 # 添加、修改(遥信属性)
-@yx_blu.route('/set_yx', methods=['POST'])
+@yx_blu.route('/setYx', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def set_yx_property():
     DataCommand = ice_con()
-    stationId = request.form.get("stationId")
-    station = json.loads(stationId)
-    newyx = request.form.get("data")
-    YxProperty = json.loads(newyx)
-    yxp = []
-    for i in range(len(YxProperty)):
-        yxp.append(json.loads(YxProperty[i]))
+    data = request.get_json()
+    stationId = data["station"]
+    YxProperty = data["selectRecords"]
     yxproperty = []
-    num = len(yxp[1])/8000
-    print num
+    num = len(YxProperty)/8000
+    # print len(YxProperty)
     j = 0
     if j < num:
         for i in range(8000*j, 8000*j+8000):
-            ID = yxp[0][i]
-            name = yxp[1][i]
-            describe = yxp[2][i]
-            ASDU = yxp[3][i]
-            wordPos = yxp[4][i]
-            bitPos = yxp[5][i]
-            bitLength = yxp[6][i]
-            LinkPoint1 = yxp[7][i]
-            LinkPoint2 = yxp[8][i]
-            OneToZero = yxp[9][i]
-            ZeroToOne = yxp[10][i]
-            address = yxp[11][i]
+            ID = YxProperty[i]["ID"]
+            name = YxProperty[i]["name"]
+            describe = YxProperty[i]["describe"]
+            ASDU = YxProperty[i]["ASDU"]
+            wordPos = YxProperty[i]["wordPos"]
+            bitPos = YxProperty[i]["bitPos"]
+            bitLength = YxProperty[i]["bitLength"]
+            LinkPoint1 = YxProperty[i]["LinkPoint1"]
+            LinkPoint2 = YxProperty[i]["LinkPoint2"]
+            OneToZero = YxProperty[i]["OneToZero"]
+            ZeroToOne = YxProperty[i]["ZeroToOne"]
+            address = YxProperty[i]["address"]
+
             if ID == "":
                 ID = 1000
             if name == "":
@@ -94,23 +93,23 @@ def set_yx_property():
                                             int(LinkPoint2), OneToZero.encode("utf-8"),
                                             ZeroToOne.encode("utf-8"), address.encode("utf-8"))
             yxproperty.append(yxpstruct)
-        DataCommand.RPCSetYXProperty(station, yxproperty)
-        print len(yxproperty)
+        DataCommand.RPCSetYXProperty(stationId, yxproperty)
         yxproperty[:] = []
         j = j+1
-    for i in range(8000*j, len(yxp[1])):
-        ID = yxp[0][i]
-        name = yxp[1][i]
-        describe = yxp[2][i]
-        ASDU = yxp[3][i]
-        wordPos = yxp[4][i]
-        bitPos = yxp[5][i]
-        bitLength = yxp[6][i]
-        LinkPoint1 = yxp[7][i]
-        LinkPoint2 = yxp[8][i]
-        OneToZero = yxp[9][i]
-        ZeroToOne = yxp[10][i]
-        address = yxp[11][i]
+    for i in range(8000*j, len(YxProperty)):
+        ID = YxProperty[i]["ID"]
+        name = YxProperty[i]["name"]
+        describe = YxProperty[i]["describe"]
+        ASDU = YxProperty[i]["ASDU"]
+        wordPos = YxProperty[i]["wordPos"]
+        bitPos = YxProperty[i]["bitPos"]
+        bitLength = YxProperty[i]["bitLength"]
+        LinkPoint1 = YxProperty[i]["LinkPoint1"]
+        LinkPoint2 = YxProperty[i]["LinkPoint2"]
+        OneToZero = YxProperty[i]["OneToZero"]
+        ZeroToOne = YxProperty[i]["ZeroToOne"]
+        address = YxProperty[i]["address"]
+
         if ID == "":
             ID = 1000
         if name == "":
@@ -142,7 +141,6 @@ def set_yx_property():
                                         int(LinkPoint2), OneToZero.encode("utf-8"),
                                         ZeroToOne.encode("utf-8"), address.encode("utf-8"))
         yxproperty.append(yxpstruct)
-    print len(yxproperty)
     # 测试写函数，不能超过约10000条数据
     # for i in range(10000):
     #     ID = i
@@ -164,8 +162,11 @@ def set_yx_property():
     #                                     int(LinkPoint2), OneToZero.encode("utf-8"),
     #                                     ZeroToOne.encode("utf-8"), address.encode("utf-8"))
     #     yxproperty.append(yxpstruct)
-    DataCommand.RPCSetYXProperty(station, yxproperty)
-    return '保存成功!'
+    status = DataCommand.RPCSetYXProperty(stationId, yxproperty)
+    response = {
+        'status': status
+    }
+    return jsonify(response)
 
 """
 @yx_blu.route('/set_yx', methods=['POST'])
@@ -229,15 +230,18 @@ def set_yx_property():
 
 
 # 删除(遥信属性)
-@yx_blu.route('/delete_yx', methods=['POST'])
+@yx_blu.route('/deleteYx', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def delete_yx_data():
     DataCommand = ice_con()
-    stationId = request.form.get("stationId")
-    station = json.loads(stationId)
-    yxIDs = request.form.get("ids")
-    yx_IDs = json.loads(yxIDs)
+    IDs = request.get_json()
+    stationId = IDs["station"]
+    yxIDs = IDs["ids"]
     pIDs = []
-    for i in range(len(yx_IDs)):
-        pIDs.append(long(yx_IDs[i]))
-    DataCommand.RPCDelYXProperty(station, pIDs)
-    return '删除成功!'
+    for i in range(len(yxIDs)):
+        pIDs.append(long(yxIDs[i]))
+    status = DataCommand.RPCDelYXProperty(stationId, pIDs)
+    response = {
+        'status': status
+    }
+    return jsonify(response)

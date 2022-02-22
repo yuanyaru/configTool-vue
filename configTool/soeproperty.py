@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 from flask import Blueprint, request, jsonify
+from flask_cors import cross_origin
 from iceCon import ice_con
 import json
 import Ice
@@ -31,22 +32,20 @@ def get_soe_property_send():
 
 
 # 添加、修改(SOE属性)
-@soe_blu.route('/set_soe', methods=['POST'])
+@soe_blu.route('/setSoe', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def set_soe_property():
     DataCommand = ice_con()
-    stationId = request.form.get("stationId")
-    station = json.loads(stationId)
-    newsoe = request.form.get("data")
-    SoeProperty = json.loads(newsoe)
-    soep = []
-    for i in range(len(SoeProperty)):
-        soep.append(json.loads(SoeProperty[i]))
+    data = request.get_json()
+    stationId = data["station"]
+    SoeProperty = data["selectRecords"]
     soeproperty = []
-    for j in range(len(soep[1])):
-        ID = soep[0][j]
-        name = soep[1][j]
-        describe = soep[2][j]
-        level = soep[3][j]
+    for i in range(len(SoeProperty)):
+        ID = SoeProperty[i]["ID"]
+        name = SoeProperty[i]["name"]
+        describe = SoeProperty[i]["describe"]
+        level = SoeProperty[i]["level"]
+
         if ID == "":
             ID = 1000
         if name == "":
@@ -58,20 +57,26 @@ def set_soe_property():
         soepstruct = SOEArea.DxPropertySOE(int(ID), name.encode("utf-8"),
                                            describe.encode("utf-8"), int(level))
         soeproperty.append(soepstruct)
-    DataCommand.RPCSetSOEProperty(station, soeproperty)
-    return '保存成功!'
+    status = DataCommand.RPCSetSOEProperty(stationId, soeproperty)
+    response = {
+        'status': status
+    }
+    return jsonify(response)
 
 
 # 删除(SOE属性)
-@soe_blu.route('/delete_soe', methods=['POST'])
+@soe_blu.route('/deleteSoe', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def delete_soe_data():
     DataCommand = ice_con()
-    stationId = request.form.get("stationId")
-    station = json.loads(stationId)
-    soeIDs = request.form.get("ids")
-    soe_IDs = json.loads(soeIDs)
+    IDs = request.get_json()
+    stationId = IDs["station"]
+    soeIDs = IDs["ids"]
     pIDs = []
-    for i in range(len(soe_IDs)):
-        pIDs.append(long(soe_IDs[i]))
-    DataCommand.RPCDelSOEProperty(station, pIDs)
-    return '删除成功!'
+    for i in range(len(soeIDs)):
+        pIDs.append(long(soeIDs[i]))
+    status = DataCommand.RPCDelSOEProperty(stationId, pIDs)
+    response = {
+        'status': status
+    }
+    return jsonify(response)

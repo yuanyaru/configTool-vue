@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 from flask import Blueprint, request, jsonify
+from flask_cors import cross_origin
 from iceCon import ice_con
 import json
 import Ice
@@ -34,28 +35,26 @@ def get_yk_property_send():
 
 
 # 添加、修改(遥控属性)
-@yk_blu.route('/set_yk', methods=['POST'])
+@yk_blu.route('/setYk', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def set_yk_property():
     DataCommand = ice_con()
-    stationId = request.form.get("stationId")
-    station = json.loads(stationId)
-    newyk = request.form.get("data")
-    YkProperty = json.loads(newyk)
-    ykp = []
-    for i in range(len(YkProperty)):
-        ykp.append(json.loads(YkProperty[i]))
+    data = request.get_json()
+    stationId = data["station"]
+    YkProperty = data["selectRecords"]
     ykproperty = []
-    for j in range(len(ykp[1])):
-        ID = ykp[0][j]
-        name = ykp[1][j]
-        describe = ykp[2][j]
-        ASDU = ykp[3][j]
-        wordPos = ykp[4][j]
-        bitPos = ykp[5][j]
-        bitLength = ykp[6][j]
-        EnablePoint = ykp[7][j]
-        EnableValue = ykp[8][j]
-        address = ykp[9][j]
+    for i in range(len(YkProperty)):
+        ID = YkProperty[i]["ID"]
+        name = YkProperty[i]["name"]
+        describe = YkProperty[i]["describe"]
+        ASDU = YkProperty[i]["ASDU"]
+        wordPos = YkProperty[i]["wordPos"]
+        bitPos = YkProperty[i]["bitPos"]
+        bitLength = YkProperty[i]["bitLength"]
+        EnablePoint = YkProperty[i]["EnablePoint"]
+        EnableValue = YkProperty[i]["EnableValue"]
+        address = YkProperty[i]["address"]
+
         if ID == "":
             ID = 1000
         if name == "":
@@ -82,20 +81,26 @@ def set_yk_property():
                                         int(bitLength), int(EnablePoint),
                                         int(EnableValue), address.encode("utf-8"))
         ykproperty.append(ykpstruct)
-    DataCommand.RPCSetYKProperty(station, ykproperty)
-    return '保存成功!'
+    status = DataCommand.RPCSetYKProperty(stationId, ykproperty)
+    response = {
+        'status': status
+    }
+    return jsonify(response)
 
 
 # 删除(遥控属性)
-@yk_blu.route('/delete_yk', methods=['POST'])
+@yk_blu.route('/deleteYk', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def delete_yk_data():
     DataCommand = ice_con()
-    stationId = request.form.get("stationId")
-    station = json.loads(stationId)
-    ykIDs = request.form.get("ids")
-    yk_IDs = json.loads(ykIDs)
+    IDs = request.get_json()
+    station = IDs["station"]
+    ykIDs = IDs["ids"]
     pIDs = []
-    for i in range(len(yk_IDs)):
-        pIDs.append(long(yk_IDs[i]))
-    DataCommand.RPCDelYKProperty(station, pIDs)
-    return '删除成功!'
+    for i in range(len(ykIDs)):
+        pIDs.append(long(ykIDs[i]))
+    status = DataCommand.RPCDelYKProperty(station, pIDs)
+    response = {
+        'status': status
+    }
+    return jsonify(response)

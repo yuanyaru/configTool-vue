@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 
 from flask import Blueprint, request, jsonify
+from flask_cors import cross_origin
 from iceCon import ice_con
 import json
 import Ice
@@ -34,27 +35,25 @@ def get_yc_property_send():
 
 
 # 添加、修改(遥测属性)
-@yc_blu.route('/set_yc', methods=['POST'])
+@yc_blu.route('/setYc', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def set_yc_property():
     DataCommand = ice_con()
-    stationId = request.form.get("stationId")
-    station = json.loads(stationId)
-    newyc = request.form.get("data")
-    YcProperty = json.loads(newyc)
-    ycp = []
-    for i in range(len(YcProperty)):
-        ycp.append(json.loads(YcProperty[i]))
+    data = request.get_json()
+    stationId = data["station"]
+    YcProperty = data["selectRecords"]
     ycproperty = []
-    for j in range(len(ycp[1])):
-        ID = ycp[0][j]
-        name = ycp[1][j]
-        describe = ycp[2][j]
-        unit = ycp[3][j]
-        kval = ycp[4][j]
-        bval = ycp[5][j]
-        address = ycp[6][j]
-        uplimt = ycp[7][j]
-        downlimt = ycp[8][j]
+    for i in range(len(YcProperty)):
+        ID = YcProperty[i]["ID"]
+        name = YcProperty[i]["name"]
+        describe = YcProperty[i]["describe"]
+        unit = YcProperty[i]["unit"]
+        kval = YcProperty[i]["kval"]
+        bval = YcProperty[i]["bval"]
+        address = YcProperty[i]["address"]
+        uplimt = YcProperty[i]["uplimt"]
+        downlimt = YcProperty[i]["downlimt"]
+
         if ID == "":
             ID = 1000
         if name == "":
@@ -79,20 +78,26 @@ def set_yc_property():
                                         address.encode("utf-8"), float(uplimt),
                                         float(downlimt))
         ycproperty.append(ycpstruct)
-    DataCommand.RPCSetYCProperty(station, ycproperty)
-    return '保存成功!'
+    status = DataCommand.RPCSetYCProperty(stationId, ycproperty)
+    response = {
+        'status': status
+    }
+    return jsonify(response)
 
 
 # 删除(遥测属性)
-@yc_blu.route('/delete_yc', methods=['POST'])
+@yc_blu.route('/deleteYc', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def delete_yc_data():
     DataCommand = ice_con()
-    stationId = request.form.get("stationId")
-    station = json.loads(stationId)
-    ycIDs = request.form.get("ids")
-    yc_IDs = json.loads(ycIDs)
+    IDs = request.get_json()
+    station = IDs["station"]
+    ycIDs = IDs["ids"]
     pIDs = []
-    for i in range(len(yc_IDs)):
-        pIDs.append(long(yc_IDs[i]))
-    DataCommand.RPCDelYCProperty(station, pIDs)
-    return '删除成功!'
+    for i in range(len(ycIDs)):
+        pIDs.append(long(ycIDs[i]))
+    status = DataCommand.RPCDelYCProperty(station, pIDs)
+    response = {
+        'status': status
+    }
+    return jsonify(response)
