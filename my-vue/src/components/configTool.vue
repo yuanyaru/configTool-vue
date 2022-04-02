@@ -19,12 +19,14 @@
 
     <el-container>
         <el-aside>
+            <el-scrollbar style="height:90%">
             <el-tree :data="treeData" 
                      @node-click="handleNodeClick"
                      :props="defaultProps"
                      style="background-color: #F5F7FA;max-width: 300px;"
                      :highlight-current="true">
             </el-tree>
+            </el-scrollbar>
         </el-aside>
 
         <el-main>
@@ -35,7 +37,7 @@
                 <vxe-button status="primary" icon="vxe-icon--download" @click="exportEvent" title="导出"></vxe-button>
                 <vxe-button status="danger" icon="fa fa-trash-o" @click="removeEvent" title="删除"></vxe-button>
                 <vxe-button status="primary" icon="fa fa-save" @click="saveEvent" title="保存"></vxe-button>
-                <vxe-button status="primary" icon="fa fa-plus" @click="insertEvent(-1)" title="在最后一行插入"></vxe-button>
+                <vxe-button status="primary" icon="fa fa-plus" @click="insertEvent()" title="插入"></vxe-button>
                 <vxe-button status="primary" icon="fa fa-refresh" @click="chongzhi" title="重置"></vxe-button>
                 <vxe-button style="float: right;">
                 <template #default>滚动操作</template>
@@ -120,7 +122,7 @@ import XEUtils from 'xe-utils'
 export default {
     data () {
         return {
-            Height: "500px",
+            Height: "530px",
             loading: false,
             custom: true,
             filterName1: '',
@@ -221,18 +223,7 @@ export default {
     },
     mounted() {
         // 表格高度自适应屏幕大小
-        this.Height = window.innerHeight - this.$refs.xTable.$el.offsetTop - 100;
-    },
-    watch: {
-        // 默认点击Tree第一个节点
-        treeData(val) {
-            if (val) {
-                this.$nextTick(() => {
-                    document.querySelector('.el-tree-node').click();
-                });
-            }
-        },
-
+        this.Height = window.innerHeight - this.$refs.xTable.$el.offsetTop - 110;
     },
     methods: {
         monitoringPage() {
@@ -273,6 +264,8 @@ export default {
 
         async getTreeData() {
             let that = this;
+            that.viewcolumns=that.staColumn
+            this.getLianludata()
             // 对应Python提供的接口
             /* const path = 'http://127.0.0.1:5000/getStaTree'; */
             const path = BASE_INFO.back_URL + '/getStaTree';
@@ -380,8 +373,9 @@ export default {
         },
 
         async getLianludata() {
+            this.loading = true
             let that = this;
-            document.getElementById("sta_name").innerText="";
+            //document.getElementById("sta_name").innerText="";
             that.tabledata = [];
             const path = BASE_INFO.back_URL + '/getLianludata';
 
@@ -392,9 +386,11 @@ export default {
                 that.tabledata = lianludata;
                 that.viewTableData(lianludata);
             });
+            this.loading = false
         },
 
         async getYXdata() {
+            this.loading = true
             let that = this;
             document.getElementById("sta_name").innerText="---"+ that.station_name;
             that.tabledata = [];
@@ -405,16 +401,18 @@ export default {
             };
 
             await axios.get(path, {params: params}).then(function (response) {
-                var yxdata = response.data.yxproperty;
-                var count = response.data.lenyxp;
-                that.totalcount = count;
-                that.yxdata = yxdata;
-                that.tabledata = yxdata;
+                var yxdata = response.data.yxproperty
+                var count = response.data.lenyxp
+                that.totalcount = count
+                that.yxdata = yxdata
+                that.tabledata = yxdata
                 that.viewTableData(yxdata);
             });
+            this.loading = false
         },
 
         async getYCdata() {
+            this.loading = true
             let that = this;
             that.tabledata = [];
             const path = BASE_INFO.back_URL + '/getYCdata';
@@ -430,9 +428,11 @@ export default {
                 that.tabledata = ycdata;
                 that.viewTableData(ycdata);
             });
+            this.loading = false
         },
 
         async getYKdata() {
+            this.loading = true
             let that = this;
             that.tabledata = [];
             const path = BASE_INFO.back_URL + '/getYKdata';
@@ -448,9 +448,11 @@ export default {
                 that.tabledata = ykdata;
                 that.viewTableData(ykdata);
             });
+            this.loading = false
         },
 
         async getYTdata() {
+            this.loading = true
             let that = this;
             that.tabledata = [];
             const path = BASE_INFO.back_URL + '/getYTdata';
@@ -466,9 +468,11 @@ export default {
                 that.tabledata = ytdata;
                 that.viewTableData(ytdata);
             });
+            this.loading = false
         },
 
         async getSOEdata() {
+            this.loading = true
             let that = this;
             that.tabledata = [];
             const path = BASE_INFO.back_URL + '/getSOEdata';
@@ -484,6 +488,7 @@ export default {
                 that.tabledata = soedata;
                 that.viewTableData(soedata);
             });
+            this.loading = false
         },
 
          //分页显示table数据
@@ -647,6 +652,43 @@ export default {
             });
         },
 
+        async saveRowEvent (row) {
+            let that = this;
+            const $table = that.$refs.xTable
+            let station = [row]
+            var station_ID = this.station_ID
+            //console.log(typeof station_ID)
+
+            $table.clearActived().then(() => {
+                that.$axios.post(that.$ipconfig.updateTable, {params: params}).then(function (response) {
+                    var status = response.data.status;
+                    console.log(status)
+                    if(status == 1) {
+                        that.$XModal.message({
+                            content: `保存成功！`,
+                            status: 'success'});
+                            if(that.setData == "/setStation") {
+                                that.getTreeData();
+                            } else if(that.setData == "/setYc") {
+                                that.getYCdata();
+                            } else if(that.setData == "/setYx") {
+                                that.getYXdata();
+                            } else if(that.setData == "/setYk") {
+                                that.getYKdata();
+                            } else if(that.setData == "/setYt") {
+                                that.getYTdata();
+                            } else if(that.setData == "/setSoe") {
+                                that.getSOEdata();
+                            }
+                    } else {
+                        that.$XModal.message({
+                            content: `保存失败！`,
+                            status: 'error'});
+                    }
+                })
+            })
+        },
+
         // 批量保存
         saveEvent () {
             let that = this;
@@ -654,6 +696,8 @@ export default {
             const selectRecords = $table.getCheckboxRecords();
             const checkedRows = selectRecords.length;
             var station_ID = this.station_ID
+            console.log(selectRecords)
+            console.log(station_ID)
 
             if(checkedRows > 0) {
                 const path = BASE_INFO.back_URL + that.setData;
@@ -746,6 +790,7 @@ export default {
 
         // 导入
         async impotEvent () {
+            this.loading = true
             const { files } = await this.$refs.xTable.readFile({
                 types: ['xls', 'xlsx']
             })
@@ -753,6 +798,8 @@ export default {
             fileReader.onload = (ev) => {
                 const data = ev.target.result
                 const workbook = XLSX.read(data, { type: 'binary' })
+                var sheetname = workbook.SheetNames[0]
+                //console.log(sheetname)
                 const csvData = XLSX.utils.sheet_to_csv(workbook.Sheets.Sheet1)
                 const tableData = []
                 var rows = csvData.split('\n');
@@ -761,7 +808,7 @@ export default {
                 // 解析数据
                 rows.forEach((vRow) => {
                     if (vRow) {
-                        console.log(vRow)
+                        //console.log(vRow)
                         const vCols = vRow.split(',')
                         const item = {}
                         // 删除数组的第一个元素
@@ -777,6 +824,7 @@ export default {
                     }
                 })
                 this.tabledata = tableData
+                this.loading = false
             }
             fileReader.readAsBinaryString(files[0])
         },
@@ -829,24 +877,56 @@ export default {
 </script>
 
 <style>
+    .el-scrollbar .el-scrollbar__wrap {overflow-x: hidden;}
+
     .el-header {
+        position: fixed;
+        top: 0px;
+        width: 100%;
+        height: 50px;
+        left: 0px;
+        line-height: 50px;
+        padding: 5px;
         background-color: #003366;
         color: white;
-        line-height: 60px;
         text-align: center; 
         font-size: 35px;
     }
 
+    .el-main {
+        position: fixed;
+        left: 285px;
+        right: 10px;
+        top: 60px;
+        bottom: 35px;
+        float: left;
+        padding: 5px;
+    }
+
     .el-aside {
+        position: fixed;
+        line-height: 30px;
+        left: 0px;
+        top: 60px;
+        bottom: 35px;
+        width:280px;
+        float:left;
+        padding:5px;
         background-color: rgb(238, 241, 246);
         color: black;
     }
 
     .el-footer {
+        position: fixed;
         background-color: #003366;
         color: white;
         text-align: center; 
         line-height: 60px;
+        width: 100%;
+        bottom: 0px;
+        left: 0px;
+        height: 25px;
+        padding: 5px;
     }
 
     .keyword-lighten {

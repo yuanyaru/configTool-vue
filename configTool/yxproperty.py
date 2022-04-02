@@ -45,9 +45,9 @@ def set_yx_property():
     YxProperty = data["selectRecords"]
     yxproperty = []
     num = len(YxProperty)/8000
-    # print len(YxProperty)
+    print num
     j = 0
-    if j < num:
+    while j < num:
         for i in range(8000*j, 8000*j+8000):
             ID = YxProperty[i]["ID"]
             name = YxProperty[i]["name"]
@@ -93,9 +93,15 @@ def set_yx_property():
                                             int(LinkPoint2), OneToZero.encode("utf-8"),
                                             ZeroToOne.encode("utf-8"), address.encode("utf-8"))
             yxproperty.append(yxpstruct)
-        DataCommand.RPCSetYXProperty(stationId, yxproperty)
+        status = DataCommand.RPCSetYXProperty(stationId, yxproperty)
+        print len(yxproperty)
         yxproperty[:] = []
         j = j+1
+        print j
+        if status == 1:
+            continue
+        else:
+            break
     for i in range(8000*j, len(YxProperty)):
         ID = YxProperty[i]["ID"]
         name = YxProperty[i]["name"]
@@ -141,6 +147,11 @@ def set_yx_property():
                                         int(LinkPoint2), OneToZero.encode("utf-8"),
                                         ZeroToOne.encode("utf-8"), address.encode("utf-8"))
         yxproperty.append(yxpstruct)
+    status = DataCommand.RPCSetYXProperty(stationId, yxproperty)
+    print len(yxproperty)
+    response = {
+        'status': status
+    }
     # 测试写函数，不能超过约10000条数据
     # for i in range(10000):
     #     ID = i
@@ -162,10 +173,6 @@ def set_yx_property():
     #                                     int(LinkPoint2), OneToZero.encode("utf-8"),
     #                                     ZeroToOne.encode("utf-8"), address.encode("utf-8"))
     #     yxproperty.append(yxpstruct)
-    status = DataCommand.RPCSetYXProperty(stationId, yxproperty)
-    response = {
-        'status': status
-    }
     return jsonify(response)
 
 """

@@ -43,7 +43,55 @@ def set_yc_property():
     stationId = data["station"]
     YcProperty = data["selectRecords"]
     ycproperty = []
-    for i in range(len(YcProperty)):
+    num = len(YcProperty) / 8000
+    print num
+    j = 0
+    while j < num:
+        for i in range(8000*j, 8000*j+8000):
+            ID = YcProperty[i]["ID"]
+            name = YcProperty[i]["name"]
+            describe = YcProperty[i]["describe"]
+            unit = YcProperty[i]["unit"]
+            kval = YcProperty[i]["kval"]
+            bval = YcProperty[i]["bval"]
+            address = YcProperty[i]["address"]
+            uplimt = YcProperty[i]["uplimt"]
+            downlimt = YcProperty[i]["downlimt"]
+
+            if ID == "":
+                ID = 1000
+            if name == "":
+                name = "请添加遥测名称"
+            if describe == "":
+                describe = "请描述遥测"
+            if unit == "":
+                unit = "请添加单位"
+            if kval == "":
+                kval = 1.0
+            if bval == "":
+                bval = 0.0
+            if address == "":
+                address = "0"
+            if uplimt == "":
+                uplimt = 2000.0
+            if downlimt == "":
+                downlimt = 0.0
+            ycpstruct = YCArea.DxPropertyYC(int(ID), name.encode("utf-8"),
+                                            describe.encode("utf-8"), unit.encode("utf-8"),
+                                            round(float(kval), 7), round(float(bval), 7),
+                                            address.encode("utf-8"), float(uplimt),
+                                            float(downlimt))
+            ycproperty.append(ycpstruct)
+        status = DataCommand.RPCSetYCProperty(stationId, ycproperty)
+        print len(ycproperty)
+        ycproperty[:] = []
+        j = j + 1
+        print j
+        if status == 1:
+            continue
+        else:
+            break
+    for i in range(8000*j, len(YcProperty)):
         ID = YcProperty[i]["ID"]
         name = YcProperty[i]["name"]
         describe = YcProperty[i]["describe"]
@@ -79,6 +127,7 @@ def set_yc_property():
                                         float(downlimt))
         ycproperty.append(ycpstruct)
     status = DataCommand.RPCSetYCProperty(stationId, ycproperty)
+    print len(ycproperty)
     response = {
         'status': status
     }

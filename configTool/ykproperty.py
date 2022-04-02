@@ -43,7 +43,58 @@ def set_yk_property():
     stationId = data["station"]
     YkProperty = data["selectRecords"]
     ykproperty = []
-    for i in range(len(YkProperty)):
+    num = len(YkProperty) / 8000
+    print num
+    j = 0
+    while j < num:
+        for i in range(8000*j, 8000*j+8000):
+            ID = YkProperty[i]["ID"]
+            name = YkProperty[i]["name"]
+            describe = YkProperty[i]["describe"]
+            ASDU = YkProperty[i]["ASDU"]
+            wordPos = YkProperty[i]["wordPos"]
+            bitPos = YkProperty[i]["bitPos"]
+            bitLength = YkProperty[i]["bitLength"]
+            EnablePoint = YkProperty[i]["EnablePoint"]
+            EnableValue = YkProperty[i]["EnableValue"]
+            address = YkProperty[i]["address"]
+
+            if ID == "":
+                ID = 1000
+            if name == "":
+                name = "请添加遥控名称"
+            if describe == "":
+                describe = "请描述遥控"
+            if ASDU == "":
+                ASDU = 0
+            if wordPos == "":
+                wordPos = 0
+            if bitPos == "":
+                bitPos = 0
+            if bitLength == "":
+                bitLength = 1
+            if EnablePoint == "":
+                EnablePoint = 0
+            if EnableValue == "":
+                EnableValue = 0
+            if address == "":
+                address = "0"
+            ykpstruct = YKArea.DxPropertyYK(int(ID), name.encode("utf-8"),
+                                            describe.encode("utf-8"), int(ASDU),
+                                            int(wordPos), int(bitPos),
+                                            int(bitLength), int(EnablePoint),
+                                            int(EnableValue), address.encode("utf-8"))
+            ykproperty.append(ykpstruct)
+        status = DataCommand.RPCSetYKProperty(stationId, ykproperty)
+        print len(ykproperty)
+        ykproperty[:] = []
+        j = j + 1
+        print j
+        if status == 1:
+            continue
+        else:
+            break
+    for i in range(8000*j, len(YkProperty)):
         ID = YkProperty[i]["ID"]
         name = YkProperty[i]["name"]
         describe = YkProperty[i]["describe"]
@@ -82,6 +133,7 @@ def set_yk_property():
                                         int(EnableValue), address.encode("utf-8"))
         ykproperty.append(ykpstruct)
     status = DataCommand.RPCSetYKProperty(stationId, ykproperty)
+    print len(ykproperty)
     response = {
         'status': status
     }

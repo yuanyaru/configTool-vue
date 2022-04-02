@@ -43,7 +43,55 @@ def set_yt_property():
     stationId = data["station"]
     YtProperty = data["selectRecords"]
     ytproperty = []
-    for i in range(len(YtProperty)):
+    num = len(YtProperty) / 8000
+    print num
+    j = 0
+    while j < num:
+        for i in range(8000*j, 8000*j+8000):
+            ID = YtProperty[i]["ID"]
+            name = YtProperty[i]["name"]
+            describe = YtProperty[i]["describe"]
+            unit = YtProperty[i]["unit"]
+            kval = YtProperty[i]["kval"]
+            bval = YtProperty[i]["bval"]
+            address = YtProperty[i]["address"]
+            uplimt = YtProperty[i]["uplimt"]
+            downlimt = YtProperty[i]["downlimt"]
+
+            if ID == "":
+                ID = 1000
+            if name == "":
+                name = "请添加遥调名称"
+            if describe == "":
+                describe = "请描述遥调"
+            if unit == "":
+                unit = "请添加单位"
+            if kval == "":
+                kval = 1.0
+            if bval == "":
+                bval = 0.0
+            if address == "":
+                address = "0"
+            if uplimt == "":
+                uplimt = 2000.0
+            if downlimt == "":
+                downlimt = 0.0
+            ytpstruct = YTArea.DxPropertyYT(int(ID), name.encode("utf-8"),
+                                            describe.encode("utf-8"), unit.encode("utf-8"),
+                                            float(kval), float(bval),
+                                            address.encode("utf-8"), float(uplimt),
+                                            float(downlimt))
+            ytproperty.append(ytpstruct)
+        status = DataCommand.RPCSetYTProperty(stationId, ytproperty)
+        print len(ytproperty)
+        ytproperty[:] = []
+        j = j + 1
+        print j
+        if status == 1:
+            continue
+        else:
+            break
+    for i in range(8000*j, len(YtProperty)):
         ID = YtProperty[i]["ID"]
         name = YtProperty[i]["name"]
         describe = YtProperty[i]["describe"]
@@ -79,6 +127,7 @@ def set_yt_property():
                                         float(downlimt))
         ytproperty.append(ytpstruct)
     status = DataCommand.RPCSetYTProperty(stationId, ytproperty)
+    print len(ytproperty)
     response = {
         'status': status
     }

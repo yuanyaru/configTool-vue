@@ -40,7 +40,37 @@ def set_soe_property():
     stationId = data["station"]
     SoeProperty = data["selectRecords"]
     soeproperty = []
-    for i in range(len(SoeProperty)):
+    num = len(SoeProperty) / 8000
+    print num
+    j = 0
+    while j < num:
+        for i in range(8000*j, 8000*j+8000):
+            ID = SoeProperty[i]["ID"]
+            name = SoeProperty[i]["name"]
+            describe = SoeProperty[i]["describe"]
+            level = SoeProperty[i]["level"]
+
+            if ID == "":
+                ID = 1000
+            if name == "":
+                name = "请添加SOE名称"
+            if describe == "":
+                describe = "请描述SOE"
+            if level == "":
+                level = 1
+            soepstruct = SOEArea.DxPropertySOE(int(ID), name.encode("utf-8"),
+                                               describe.encode("utf-8"), int(level))
+            soeproperty.append(soepstruct)
+        status = DataCommand.RPCSetSOEProperty(stationId, soeproperty)
+        print len(soeproperty)
+        soeproperty[:] = []
+        j = j + 1
+        print j
+        if status == 1:
+            continue
+        else:
+            break
+    for i in range(8000*j, len(SoeProperty)):
         ID = SoeProperty[i]["ID"]
         name = SoeProperty[i]["name"]
         describe = SoeProperty[i]["describe"]
@@ -58,6 +88,7 @@ def set_soe_property():
                                            describe.encode("utf-8"), int(level))
         soeproperty.append(soepstruct)
     status = DataCommand.RPCSetSOEProperty(stationId, soeproperty)
+    print len(soeproperty)
     response = {
         'status': status
     }
